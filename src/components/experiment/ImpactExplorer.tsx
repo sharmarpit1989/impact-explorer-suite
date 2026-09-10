@@ -100,7 +100,7 @@ export function ImpactExplorer() {
   const data = useMemo(() => buildSeries(metric, scale), [metric, scale]);
   const rows = useMemo(() => driversFor(metric, breakdown), [metric, breakdown]);
 
-  const last = data[data.length - 1];
+  const last = data[data.length - 1]!;
   const baseline = Number((metric.pre * scale).toFixed(metric.decimals ?? 1));
   const current = last.treated;
   const delta = Number((current - baseline).toFixed(1));

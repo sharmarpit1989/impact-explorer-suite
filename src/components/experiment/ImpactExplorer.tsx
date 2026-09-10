@@ -81,11 +81,11 @@ interface ActiveFilter {
 }
 
 export function ImpactExplorer() {
-  const [categoryId, setCategoryId] = useState(CATEGORIES[0].id);
+  const [categoryId, setCategoryId] = useState(CATEGORIES[0]!.id);
   const category = CATEGORIES.find((c) => c.id === categoryId)!;
-  const [metricId, setMetricId] = useState(category.metrics[0].id);
+  const [metricId, setMetricId] = useState(category.metrics[0]!.id);
   const metric: Metric =
-    category.metrics.find((m) => m.id === metricId) ?? category.metrics[0];
+    category.metrics.find((m) => m.id === metricId) ?? category.metrics[0]!;
   const [view, setView] = useState<ViewId>(metric.views[0]!);
   const [breakdown, setBreakdown] = useState<BreakdownId>("overall");
   const [filters, setFilters] = useState<ActiveFilter[]>([]);

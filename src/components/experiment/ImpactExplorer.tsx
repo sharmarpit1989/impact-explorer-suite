@@ -35,6 +35,7 @@ import {
   formatValue,
   type BreakdownId,
   type Metric,
+  type Point,
   type ViewId,
 } from "@/lib/experiment-data";
 import { cn } from "@/lib/utils";
@@ -85,12 +86,12 @@ export function ImpactExplorer() {
   const [metricId, setMetricId] = useState(category.metrics[0].id);
   const metric: Metric =
     category.metrics.find((m) => m.id === metricId) ?? category.metrics[0];
-  const [view, setView] = useState<ViewId>(metric.views[0]);
+  const [view, setView] = useState<ViewId>(metric.views[0]!);
   const [breakdown, setBreakdown] = useState<BreakdownId>("overall");
   const [filters, setFilters] = useState<ActiveFilter[]>([]);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
 
-  const activeView = metric.views.includes(view) ? view : metric.views[0];
+  const activeView = metric.views.includes(view) ? view : metric.views[0]!;
 
   const scale = useMemo(
     () => 1 + filters.length * 0.06 - (filters.length ? 0.02 : 0),
@@ -108,13 +109,13 @@ export function ImpactExplorer() {
   const selectCategory = (id: typeof categoryId) => {
     const next = CATEGORIES.find((c) => c.id === id)!;
     setCategoryId(id);
-    setMetricId(next.metrics[0].id);
-    setView(next.metrics[0].views[0]);
+    setMetricId(next.metrics[0]!.id);
+    setView(next.metrics[0]!.views[0]!);
   };
 
   const selectMetric = (m: Metric) => {
     setMetricId(m.id);
-    if (!m.views.includes(view)) setView(m.views[0]);
+    if (!m.views.includes(view)) setView(m.views[0]!);
   };
 
   const addFilter = (dimension: string, value: string) => {
@@ -322,14 +323,14 @@ export function ImpactExplorer() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
               <ReferenceArea
-                x1={TIMELINE[0]}
+                x1={TIMELINE[0]!}
                 x2={DEPLOY_LABEL}
                 fill="var(--color-muted)"
                 fillOpacity={0.55}
               />
               <ReferenceArea
                 x1={DEPLOY_LABEL}
-                x2={TIMELINE[TIMELINE.length - 1]}
+                x2={TIMELINE[TIMELINE.length - 1]!}
                 fill="var(--color-chart-1)"
                 fillOpacity={0.05}
               />
@@ -363,7 +364,13 @@ export function ImpactExplorer() {
               />
               <Tooltip
                 content={(props) => (
-                  <ChartTooltip {...props} metric={metric} isLift={isLift} />
+                  <ChartTooltip
+                    active={props.active ?? false}
+                    payload={(props.payload ?? []) as { payload: Point }[]}
+                    label={String(props.label ?? "")}
+                    metric={metric}
+                    isLift={isLift}
+                  />
                 )}
               />
               <Area
@@ -641,17 +648,17 @@ function ChartTooltip({
   metric,
   isLift,
 }: {
-  active?: boolean;
-  payload?: { payload: Record<string, number | string> }[];
-  label?: string;
+  active: boolean;
+  payload: { payload: Point }[];
+  label: string;
   metric: Metric;
   isLift: boolean;
 }) {
-  if (!active || !payload?.length) return null;
-  const p = payload[0].payload as Record<string, number | string>;
-  const value = Number(isLift ? p.lift : p.treated);
-  const baseline = Number(p.baseline);
-  const lift = Number(p.lift);
+  if (!active || !payload.length) return null;
+  const p = payload[0]!.payload;
+  const value = isLift ? p.lift : p.treated;
+  const baseline = p.baseline;
+  const lift = p.lift;
   return (
     <div className="min-w-56 rounded-lg border border-border bg-popover p-3 text-xs shadow-md">
       <div className="flex items-center justify-between">
@@ -671,9 +678,9 @@ function ChartTooltip({
       <Separator className="my-2" />
       <Row
         label="vs Competitor"
-        value={`${(Number(p.treated) - Number(p.competitor)).toFixed(1)}`}
+        value={(p.treated - p.competitor).toFixed(1)}
       />
-      <Row label="vs Control" value={`${(Number(p.treated) - Number(p.control)).toFixed(1)}`} />
+      <Row label="vs Control" value={(p.treated - p.control).toFixed(1)} />
     </div>
   );
 }
